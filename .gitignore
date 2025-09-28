@@ -1,0 +1,97 @@
+# Terraform (applies to all terraform directories across the project)
+**/terraform/*.tfstate
+**/terraform/*.tfstate.*
+**/terraform/*.tfvars
+**/terraform/*.tfvars.json
+**/terraform/.terraform/
+**/terraform/.terraform.lock.hcl
+**/terraform/crash.log
+**/terraform/crash.*.log
+**/terraform/override.tf
+**/terraform/override.tf.json
+**/terraform/*_override.tf
+**/terraform/*_override.tf.json
+**/terraform/.terraformrc
+**/terraform/terraform.rc
+
+# SSH Keys (any directory)
+**/*.pem
+**/*.key
+**/id_rsa*
+**/id_ed25519*
+
+# Node.js (any directory)
+**/node_modules/
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/lerna-debug.log*
+**/.npm
+**/.yarn/cache
+**/.yarn/unplugged
+**/.yarn/build-state.yml
+**/.yarn/install-state.gz
+**/.pnp.*
+
+# Environment variables (any directory)
+**/.env
+**/.env.local
+**/.env.development.local
+**/.env.test.local
+**/.env.production.local
+
+# Logs (any directory)
+**/logs
+**/*.log
+
+# Runtime data (any directory)
+**/pids
+**/*.pid
+**/*.seed
+**/*.pid.lock
+
+# Coverage directory (any directory)
+**/coverage/
+**/*.lcov
+
+# Dependency directories (any directory)
+**/jspm_packages/
+
+# Optional npm cache directory (any directory)
+**/.npm
+
+# Optional eslint cache (any directory)
+**/.eslintcache
+
+# Output of 'npm pack' (any directory)
+**/*.tgz
+
+# Yarn Integrity file (any directory)
+**/.yarn-integrity
+
+# Parcel-bundler cache (any directory)
+**/.cache
+**/.parcel-cache
+
+# Editor directories and files (any directory)
+**/.vscode/
+**/.idea/
+**/*.swp
+**/*.swo
+**/*~
+
+# OS generated files (any directory)
+**/.DS_Store
+**/.DS_Store?
+**/._*
+**/.Spotlight-V100
+**/.Trashes
+**/ehthumbs.db
+**/Thumbs.db
+
+# Docker (any directory)
+**/.dockerignore
+
+# AWS (any directory)
+**/.aws/
+**/aws-exports.js
