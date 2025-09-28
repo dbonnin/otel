@@ -11,7 +11,7 @@ data "aws_subnets" "default" {
 }
 
 data "aws_subnet" "default" {
-  id = data.aws_subnets.default.ids[0]
+  id = data.aws_subnets.default.ids[1]
 }
 
 # Generate TLS private key
@@ -32,8 +32,8 @@ resource "aws_key_pair" "ec2_key_pair" {
 
 # Save private key to local file
 resource "local_file" "private_key" {
-  content  = tls_private_key.ec2_key.private_key_pem
-  filename = "ec2-docker-key.pem"
+  content         = tls_private_key.ec2_key.private_key_pem
+  filename        = "ec2-docker-key.pem"
   file_permission = "0400"
 }
 
@@ -234,10 +234,10 @@ locals {
 resource "aws_instance" "docker_instance" {
   ami                    = data.aws_ami.amazon_linux.id
   instance_type          = var.instance_type
-  key_name              = aws_key_pair.ec2_key_pair.key_name
+  key_name               = aws_key_pair.ec2_key_pair.key_name
   vpc_security_group_ids = [aws_security_group.ec2_sg.id]
-  subnet_id             = data.aws_subnet.default.id
-  iam_instance_profile  = aws_iam_instance_profile.ec2_profile.name
+  subnet_id              = data.aws_subnet.default.id
+  iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
 
   user_data                   = base64encode(local.user_data)
   user_data_replace_on_change = true
