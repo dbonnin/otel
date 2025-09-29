@@ -100,6 +100,22 @@ resource "aws_security_group" "ec2_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # OpenTelemetry Collector OTLP gRPC
+  ingress {
+    from_port   = 4317
+    to_port     = 4317
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # OpenTelemetry Collector OTLP HTTP
+  ingress {
+    from_port   = 4318
+    to_port     = 4318
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   # SSH access
   ingress {
     from_port   = 22
@@ -234,18 +250,58 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 locals {
   user_data = <<-EOF
     #!/bin/bash
+    set -xe
+    exec > >(tee -a /var/log/user-data.log) 2>&1
+
+    echo "[user-data] Starting bootstrap at $(date)"
+
+    # Update packages
     yum update -y
-    
-    # Install Docker and Git
+
+    # Install prerequisites: Docker, Git, Node.js and npm (npm is bundled with node in AL2023 but include for safety)
     yum install -y docker git
-    systemctl start docker
+    if ! command -v node >/dev/null 2>&1; then
+      yum install -y nodejs || true
+    fi
+    if ! command -v npm >/dev/null 2>&1; then
+      yum install -y npm || true
+    fi
+
+    # Start and enable Docker
     systemctl enable docker
-    
-    # Add ec2-user to docker group
-    usermod -a -G docker ec2-user
-    
-    # Log completion
-    echo "Docker and Git installation completed at $(date)" >> /var/log/user-data.log
+    systemctl start docker
+
+    # Add ec2-user to docker group (takes effect on next login; we will run docker as root in this script)
+    usermod -a -G docker ec2-user || true
+
+    # Prepare workspace and clone repository
+    REPO_DIR="/home/ec2-user/otel"
+    if [ -d "$REPO_DIR/.git" ]; then
+      echo "[user-data] Repository exists, pulling latest..."
+      cd "$REPO_DIR"
+      git fetch --all
+      git reset --hard origin/main
+    else
+      echo "[user-data] Cloning repository..."
+      su - ec2-user -c "git clone https://github.com/dbonnin/otel.git $REPO_DIR"
+    fi
+
+    # Ensure correct ownership
+    chown -R ec2-user:ec2-user /home/ec2-user/otel || true
+
+    # Build and run the OpenTelemetry Collector container
+    COLLECTOR_DIR="/home/ec2-user/otel/js/sample-app/otel-collector"
+    if [ -f "$COLLECTOR_DIR/run.sh" ]; then
+      echo "[user-data] Starting OpenTelemetry Collector..."
+      cd "$COLLECTOR_DIR"
+      chmod +x run.sh
+      # Run as root so docker group membership is not required immediately
+      ./run.sh
+    else
+      echo "[user-data] Collector run.sh not found at $COLLECTOR_DIR" >&2
+    fi
+
+    echo "[user-data] Bootstrap completed at $(date)"
   EOF
 }
 

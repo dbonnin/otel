@@ -1,9 +1,8 @@
 /*app.ts*/
-import express, { Express, Request, Response, NextFunction } from 'express';
+import express, { Express, Request, Response } from 'express';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { randomUUID } from 'crypto';
-import { metrics } from '@opentelemetry/api';
 
 const PORT: number = parseInt(process.env.PORT || '8080');
 const TABLE_NAME: string = process.env.DYNAMODB_TABLE_NAME || 'express-app-table';
@@ -30,46 +29,6 @@ try {
   console.error('❌ Error initializing DynamoDB client:', error);
   process.exit(1);
 }
-
-// Initialize OpenTelemetry meter for custom metrics
-console.log('📊 Initializing OpenTelemetry metrics...');
-const meter = metrics.getMeter('express-app');
-const requestDurationHistogram = meter.createHistogram('http.server.request.duration', {
-  description: 'Duration of HTTP requests in milliseconds',
-  unit: 'ms'
-});
-console.log('✅ OpenTelemetry metrics initialized successfully');
-
-// Middleware to track request duration and send custom metrics
-app.use((req: Request, res: Response, next: NextFunction) => {
-  const startTime = Date.now();
-  
-  res.on('finish', () => {
-    const duration = Date.now() - startTime;
-    const timestamp = new Date().toISOString();
-    
-    console.log(`📈 Recording custom metric:`);
-    console.log(`   - Method: ${req.method}`);
-    console.log(`   - URL: ${req.url}`);
-    console.log(`   - Route: ${req.route?.path || req.path}`);
-    console.log(`   - Status: ${res.statusCode}`);
-    console.log(`   - Duration: ${duration}ms`);
-    console.log(`   - Timestamp: ${timestamp}`);
-    
-    // Record custom metric with attributes
-    requestDurationHistogram.record(duration, {
-      'http.method': req.method,
-      'http.route': req.route?.path || req.path,
-      'http.status_code': res.statusCode,
-      'http.url': req.url,
-      'timestamp': timestamp
-    });
-    
-    console.log('✅ Custom metric recorded successfully');
-  });
-  
-  next();
-});
 
 function getRandomNumber(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1) + min);
