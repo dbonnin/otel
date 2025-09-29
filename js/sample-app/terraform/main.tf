@@ -11,7 +11,24 @@ data "aws_subnets" "default" {
 }
 
 data "aws_subnet" "default" {
-  id = data.aws_subnets.default.ids[1]
+  id = data.aws_subnets.default.ids[0]
+}
+
+# DynamoDB Table
+resource "aws_dynamodb_table" "app_table" {
+  name         = "express-app-table"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "id"
+
+  attribute {
+    name = "id"
+    type = "S"
+  }
+
+  tags = {
+    Name        = "express-app-table"
+    Environment = var.environment
+  }
 }
 
 # Generate TLS private key
@@ -184,10 +201,12 @@ resource "aws_iam_policy" "ec2_policy" {
           "dynamodb:Query",
           "dynamodb:Scan",
           "dynamodb:UpdateItem",
-          "dynamodb:DescribeTable",
-          "dynamodb:ListTables"
+          "dynamodb:DescribeTable"
         ]
-        Resource = "*"
+        Resource = [
+          aws_dynamodb_table.app_table.arn,
+          "${aws_dynamodb_table.app_table.arn}/*"
+        ]
       }
     ]
   })
@@ -303,6 +322,16 @@ output "security_group_id" {
 output "iam_role_arn" {
   description = "ARN of the IAM role"
   value       = aws_iam_role.ec2_role.arn
+}
+
+output "dynamodb_table_name" {
+  description = "Name of the DynamoDB table"
+  value       = aws_dynamodb_table.app_table.name
+}
+
+output "dynamodb_table_arn" {
+  description = "ARN of the DynamoDB table"
+  value       = aws_dynamodb_table.app_table.arn
 }
 
 output "ssh_command" {
