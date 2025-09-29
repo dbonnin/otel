@@ -314,7 +314,7 @@ resource "aws_instance" "docker_instance" {
   subnet_id              = data.aws_subnet.default.id
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
 
-  user_data                   = base64encode(local.user_data)
+  user_data_base64            = base64encode(local.user_data)
   user_data_replace_on_change = true
 
   root_block_device {
