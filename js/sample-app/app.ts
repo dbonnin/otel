@@ -1,12 +1,14 @@
 /*app.ts*/
-import express, { Express, Request, Response } from 'express';
+import express, { Express, Request, Response, NextFunction } from 'express';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { randomUUID } from 'crypto';
+import { CloudWatchClient, PutMetricDataCommand } from '@aws-sdk/client-cloudwatch';
 
 const PORT: number = parseInt(process.env.PORT || '8080');
 const TABLE_NAME: string = process.env.DYNAMODB_TABLE_NAME || 'express-app-table';
 const AWS_REGION: string = process.env.AWS_REGION || 'us-east-1';
+const METRIC_NAMESPACE: string = process.env.METRIC_NAMESPACE || 'ExpressCustomMetrics';
 
 console.log('🚀 Initializing Express application...');
 console.log(`📋 Configuration:`);
@@ -15,6 +17,65 @@ console.log(`   - TABLE_NAME: ${TABLE_NAME}`);
 console.log(`   - AWS_REGION: ${AWS_REGION}`);
 
 const app: Express = express();
+
+// Initialize CloudWatch client
+console.log('📈 Initializing CloudWatch client...');
+let cwClient: CloudWatchClient | undefined;
+try {
+  cwClient = new CloudWatchClient({ region: AWS_REGION });
+  console.log('✅ CloudWatch client initialized successfully');
+} catch (error) {
+  console.error('❌ Error initializing CloudWatch client:', error);
+}
+
+// Metrics middleware to record response time per URL and status code
+app.use(async (req: Request, res: Response, next: NextFunction) => {
+  const start = process.hrtime.bigint();
+  const url = req.path || req.originalUrl || req.url || 'unknown';
+  const requestTime = new Date();
+
+  // When the response finishes, compute duration and send metric
+  res.on('finish', async () => {
+    try {
+      const end = process.hrtime.bigint();
+      const durationMs = Number(end - start) / 1_000_000; // ms
+      const statusCode = res.statusCode;
+
+      console.log(`📏 Request metric: url=${url} status=${statusCode} durationMs=${durationMs.toFixed(2)} ts=${requestTime.toISOString()}`);
+
+      if (!cwClient) return;
+
+      const dimensions = [
+        { Name: 'Route', Value: url },
+        { Name: 'StatusCode', Value: String(statusCode) },
+      ];
+
+      const metricData = [
+        {
+          MetricName: 'HttpRequestDurationMs',
+          Dimensions: dimensions,
+          Timestamp: requestTime,
+          Unit: 'Milliseconds' as const,
+          Value: durationMs,
+          StorageResolution: 1,
+        },
+      ];
+
+      await cwClient.send(
+        new PutMetricDataCommand({
+          Namespace: METRIC_NAMESPACE,
+          MetricData: metricData,
+        })
+      );
+
+      console.log('✅ Custom metric sent to CloudWatch');
+    } catch (err) {
+      console.error('❌ Failed to send custom metric to CloudWatch:', err);
+    }
+  });
+
+  next();
+});
 
 // Initialize DynamoDB client
 console.log('🔧 Initializing DynamoDB client...');

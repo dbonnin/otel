@@ -1,3 +1,27 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region  = var.aws_region
+  profile = var.aws_profile
+}
+
+variable "aws_region" {
+  type    = string
+  default = "us-east-1"
+}
+
+variable "aws_profile" {
+  type    = string
+  default = "default"
+}
+
 # Data sources to get default VPC and subnet information
 data "aws_vpc" "default" {
   default = true
@@ -11,7 +35,7 @@ data "aws_subnets" "default" {
 }
 
 data "aws_subnet" "default" {
-  id = data.aws_subnets.default.ids[0]
+  id = data.aws_subnets.default.ids[1]
 }
 
 # DynamoDB Table
@@ -320,7 +344,6 @@ resource "aws_instance" "docker_instance" {
   root_block_device {
     volume_type = "gp3"
     volume_size = 40
-    encrypted   = true
   }
 
   tags = {

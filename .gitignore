@@ -95,3 +95,27 @@
 # AWS (any directory)
 **/.aws/
 **/aws-exports.js
+
+# Webpack build outputs
+**/dist/
+**/build/
+
+# Webpack hot updates
+**/*.hot-update.js
+**/*.hot-update.json
+
+# Webpack stats
+**/webpack-stats.json
+**/stats.json
+
+# Webpack caches (if configured outside node_modules)
+**/.webpack/
+**/.webpack-cache/
+**/.module-cache/
+
+# Source maps generated in build outputs
+**/dist/**/*.map
+**/build/**/*.map
+
+# TypeScript build info (often created during bundling)
+**/*.tsbuildinfo

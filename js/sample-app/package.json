@@ -2,14 +2,22 @@
   "name": "sample-app",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:fat": "webpack --config webpack.fat.config.js",
+    "build:otel": "webpack --config webpack.otel.config.js",
+    "build": "npm run build:fat && npm run build:otel",
+    "start:fat": "node dist/app-fat.js",
+    "start:fat:otel": "NODE_OPTIONS='--require @aws/aws-distro-opentelemetry-node-autoinstrumentation/register' node dist/app-fat.js",
+    "start:otel": "node dist/app-otel.js",
+    "dev": "npx tsx --require '@aws/aws-distro-opentelemetry-node-autoinstrumentation/register' app.ts",
+    "test": "./test.sh"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-cloudwatch": "^3.896.0",
     "@aws-sdk/client-dynamodb": "^3.896.0",
     "@aws-sdk/lib-dynamodb": "^3.896.0",
     "@aws/aws-distro-opentelemetry-node-autoinstrumentation": "^0.7.0",
@@ -18,7 +26,11 @@
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/node": "^24.5.2",
+    "ts-loader": "^9.5.4",
     "tsx": "^4.20.6",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "webpack": "^5.102.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-node-externals": "^3.0.0"
   }
 }
